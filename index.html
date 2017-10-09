@@ -9,10 +9,13 @@
 <body>
     <div class="container">
         <h1 class="title">bf2wasm</h1>
-        <div class="field is-grouped">
-            <div class="control is-expanded">
-                <label class="label" for="brainfuck-input">Input</label>
-                <textarea class="textarea" id="brainfuck-input" style="min-height: 400px">
+        <div class="tile is-ancestor">
+            <div class="tile is-parent">
+                <div class="tile is-child">
+                    <div class="field">
+                        <div class="control is-expanded">
+                            <label class="label" for="brainfuck-input">Input</label>
+                            <textarea class="textarea" id="brainfuck-input" style="min-height: 400px">
 ++++++++                Set Cell #0 to 8
 [
     >++++               Add 4 to Cell #1; this will always set Cell #1 to 4
@@ -46,16 +49,28 @@ Pointer :   ^
 +++.------.--------.    Cell #3 for 'rl' and 'd'
 >>+.                    Add 1 to Cell #5 gives us an exclamation point
 >++.                    And finally a newline from Cell #6
-                </textarea>
+                            </textarea>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <p class="control">
+                            <button class="button is-success" onclick="run()">Run</button>
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div class="control is-expanded">
-                <label class="label" for="brainfuck-output">Output</label>
-                <textarea class="textarea" id="brainfuck-output" style="min-height: 400px"></textarea>
+            <div class="tile is-parent is-vertical">
+                <div class="tile is-child">
+                    <label class="label" for="brainfuck-output">String Output</label>
+                    <textarea class="textarea" id="brainfuck-string-output"></textarea>
+                </div>
+
+                <div class="tile is-child">
+                    <label class="label" for="brainfuck-output">Int32 Output</label>
+                    <textarea class="textarea" id="brainfuck-int-output"></textarea>
+                </div>
             </div>
-        </div>
-        <div class="field">
-            <button class="button is-success" onclick="run()">Run</button>
         </div>
     </div>
 
