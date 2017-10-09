@@ -46,7 +46,7 @@ const bfToWasm = (function() {
     return instrs;
   }
 
-  function optimizeBf(instrs) {
+  function optimizeInstrs(instrs) {
     return instrs;
   }
 
@@ -69,9 +69,10 @@ const bfToWasm = (function() {
 
     const startSection = createSection('start', startFuncIndex);
 
-    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), []);
     const localVarCount = 0x02;
-    const codeSection = createSection('code', functionBody.length + 2, functionsCount, localVarCount);
+    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), []);
+    const functionEnd = 0x0b;
+    const codeSection = createSection('code', functionBody.length + 2, functionsCount, localVarCount, functionBody, functionEnd);
 
     const buffer = [...magicNumber, ...version, ...typeSection, ...funcSection, ...startSection, ...codeSection];
     return Uint8Array.from(buffer);
@@ -90,7 +91,7 @@ const bfToWasm = (function() {
     const bfNoComment = stripComments(bfStr); 
     let instrs = parseBf(bfNoComment);
     if (optimize) {
-      instrs = optimizeBf(instrs);
+      instrs = optimizeInstrs(instrs);
     }
     return compileToWasm(instrs);
   }
