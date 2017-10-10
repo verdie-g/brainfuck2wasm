@@ -50,7 +50,7 @@ const bfToWasm = (function() {
   function parseBf(bfStr) {
     const instrs = [];
     for (const symbol of bfStr) {
-      const toWasm = InstrToWasm[symbol];
+      const toWasm = instrToWasm[symbol];
       instrs.push(new BfInstr(symbol, toWasm));
     }
     return instrs;
@@ -82,7 +82,8 @@ const bfToWasm = (function() {
     const localEntriesCount = 0x01;
     const i32VarCount = 0x02;
     const functionEnd = 0x0b;
-    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), []).push(functionEnd);
+    const initOutputIndex = [wasmInstr.i32const, 0x80, 0x80, 0x04, wasmInstr.setLocal, 0x01];
+    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), []).push(initOutputIndex, functionEnd);
     const codeSection = createSection('code', functionsCount, functionBody.length, localEntriesCount, i32VarCount, type.i32, functionBody);
 
     const buffer = [...magicNumber, ...version, ...typeSection, ...funcSection, ...startSection, ...codeSection];
