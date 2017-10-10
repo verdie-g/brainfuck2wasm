@@ -1,7 +1,7 @@
 const bfToWasm = (function() {
   'use strict';
 
-  const Section = {
+  const section = {
     type: 0x01,
     import: 0x02,
     func: 0x03,
@@ -13,6 +13,16 @@ const bfToWasm = (function() {
     elem: 0x09,
     code: 0x0a,
     elem: 0x0b
+  };
+  
+  const type = {
+    i32: 0x7f,
+    i64: 0x7e,
+    f32: 0x7d,
+    f64: 0x7c,
+    anyfunc: 0x70,
+    func: 0x60,
+    block: 0x40
   };
 
   const InstrToWasm = {
@@ -52,7 +62,7 @@ const bfToWasm = (function() {
 
   function createSection(sectionType, ...data) {
     const flatData = [].concat.apply([], data);
-    return [Section[sectionType], flatData.length, ...flatData];
+    return [section[sectionType], flatData.length, ...flatData];
   }
 
   function compileToWasm(instrs) {
@@ -62,7 +72,7 @@ const bfToWasm = (function() {
     const functionsCount = 0x01;
     const startFuncIndex = 0x00;
     
-    const startFunctionSignature = [0x60, 0x00, 0x00];
+    const startFunctionSignature = [type.func, 0x00, 0x00];
     const typeSection = createSection('type', functionsCount, startFunctionSignature);
 
     const funcSection = createSection('func', functionsCount, startFuncIndex);
