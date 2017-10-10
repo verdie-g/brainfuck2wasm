@@ -1,6 +1,8 @@
 const bfToWasm = (function() {
   'use strict';
 
+  const CELL_SIZE = 4;
+
   const section = {
     type: 0x01,
     import: 0x02,
@@ -25,15 +27,61 @@ const bfToWasm = (function() {
     block: 0x40
   };
 
-  const InstrToWasm = {
-    '>': (buffer, loopStack) => [],
-    '<': (buffer, loopStack) => [],
-    '+': (buffer, loopStack) => [],
-    '-': (buffer, loopStack) => [],
-    ',': (buffer, loopStack) => [],
-    '.': (buffer, loopStack) => [],
-    '[': (buffer, loopStack) => [],
-    ']': (buffer, loopStack) => []
+  const wasmInstr = {
+    getLocal:	0x20,
+    setLocal:	0x21,
+    i32const:	0x41,
+    i32load:	0x28,
+    i32store:	0x36,
+    i32add:	0x6a,
+    i32sub:	0x6b,
+    i32eqz:	0x45
+  };
+
+  const instrToWasm = {
+    '>': () => [
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.i32const, CELL_SIZE,
+      wasmInstr.i32add,
+      wasmInstr.setLocal, 0x00
+    ],
+    '<': () => [
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.i32const, CELL_SIZE,
+      wasmInstr.i32sub,
+      wasmInstr.setLocal, 0x00
+    ],
+    '+': () => [
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.i32load, 0x2, 0x00,
+      wasmInstr.i32const, 0x01,
+      wasmInstr.i32add,
+      wasmInstr.i32store, 0x02, 0x00
+    ],
+    '-': () => [
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.i32load, 0x2, 0x00,
+      wasmInstr.i32const, 0x01,
+      wasmInstr.i32sub,
+      wasmInstr.i32store, 0x02, 0x00
+    ],
+    ',': () => [
+
+    ],
+    '.': () => [
+      wasmInstr.getLocal, 0x01,
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.i32load, 0x2, 0x00,
+      wasmInstr.i32store, 0x02, 0x00,
+      wasmInstr.getLocal, 0x01,
+      wasmInstr.i32const, CELL_SIZE,
+      wasmInstr.i32add,
+      wasmInst.setLocal, 0x01
+    ],
+    '[': (loopStack) => [],
+    ']': (loopStack) => []
   };
 
   function BfInstr(instrSymbol, toWasm, extraParams) {
