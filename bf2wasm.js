@@ -79,10 +79,11 @@ const bfToWasm = (function() {
 
     const startSection = createSection('start', startFuncIndex);
 
-    const localVarCount = 0x02;
-    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), []);
+    const localEntriesCount = 0x01;
+    const i32VarCount = 0x02;
     const functionEnd = 0x0b;
-    const codeSection = createSection('code', functionBody.length + 2, functionsCount, localVarCount, functionBody, functionEnd);
+    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), []).push(functionEnd);
+    const codeSection = createSection('code', functionsCount, functionBody.length, localEntriesCount, i32VarCount, type.i32, functionBody);
 
     const buffer = [...magicNumber, ...version, ...typeSection, ...funcSection, ...startSection, ...codeSection];
     return Uint8Array.from(buffer);
