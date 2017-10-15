@@ -113,7 +113,7 @@ const bfToWasm = (function() {
 
   function createSection(sectionType, ...data) {
     const flatData = [].concat.apply([], data);
-    return [section[sectionType], flatData.length, ...flatData];
+    return [section[sectionType], ...intToVaruint(flatData.length), ...flatData];
   }
 
   function getStrBytes(str) {
@@ -122,6 +122,33 @@ const bfToWasm = (function() {
       bytes.push(str.charCodeAt(i));
     }
     return bytes;
+  }
+
+  function intToVarint(n) {
+    const buffer = [];
+    let more = true;
+    while (more) {
+      let byte = n & 0x7F;
+      n >>>= 7;
+      if ((n === 0 && (byte & 0x40) === 0) || (n === -1 && (byte & 0x40) !== 0))
+        more = false;
+      else
+        byte |= 0x80;
+      buffer.push(byte);
+    }
+    return buffer;
+  }
+
+  function intToVaruint(n) {
+    const buffer = [];
+    do {
+      let byte = n & 0x7F;
+      n >>>= 7;
+      if (n !== 0)
+        byte |= 0x80;
+      buffer.push(byte);
+    } while (n !== 0);
+    return buffer;
   }
 
   function compileToWasm(instrs) {
@@ -151,8 +178,8 @@ const bfToWasm = (function() {
     const initOutputIndex = [wasmInstr.i32const, 0x80, 0x80, 0x04, wasmInstr.setLocal, 0x00];
     const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), initOutputIndex);
     functionBody.push(functionEnd);
-    const functionLength = functionBody.length + 3;
-    const codeSection = createSection('code', functionsCount, functionLength, localEntriesCount, i32VarCount, type.i32, functionBody);
+    const functionLength = intToVaruint(functionBody.length + 3);
+    const codeSection = createSection('code', functionsCount, ...functionLength, localEntriesCount, i32VarCount, type.i32, functionBody);
 
     const buffer = [...magicNumber, ...version, ...typeSection, ...importSection, ...funcSection, ...startSection, ...codeSection];
     return Uint8Array.from(buffer);
