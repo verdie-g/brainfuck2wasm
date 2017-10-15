@@ -38,6 +38,8 @@ const bfToWasm = (function() {
     i32eqz:	0x45
   };
 
+  // local 0 : brainfuck array index
+  // local 1 : output array index
   const instrToWasm = {
     '>': () => [
       wasmInstr.getLocal, 0x00,
@@ -54,7 +56,7 @@ const bfToWasm = (function() {
     '+': () => [
       wasmInstr.getLocal, 0x00,
       wasmInstr.getLocal, 0x00,
-      wasmInstr.i32load, 0x2, 0x00,
+      wasmInstr.i32load, 0x02, 0x00,
       wasmInstr.i32const, 0x01,
       wasmInstr.i32add,
       wasmInstr.i32store, 0x02, 0x00
@@ -62,7 +64,7 @@ const bfToWasm = (function() {
     '-': () => [
       wasmInstr.getLocal, 0x00,
       wasmInstr.getLocal, 0x00,
-      wasmInstr.i32load, 0x2, 0x00,
+      wasmInstr.i32load, 0x02, 0x00,
       wasmInstr.i32const, 0x01,
       wasmInstr.i32sub,
       wasmInstr.i32store, 0x02, 0x00
@@ -73,15 +75,16 @@ const bfToWasm = (function() {
     '.': () => [
       wasmInstr.getLocal, 0x01,
       wasmInstr.getLocal, 0x00,
-      wasmInstr.i32load, 0x2, 0x00,
+      wasmInstr.i32load, 0x02, 0x00,
       wasmInstr.i32store, 0x02, 0x00,
+
       wasmInstr.getLocal, 0x01,
       wasmInstr.i32const, CELL_SIZE,
       wasmInstr.i32add,
-      wasmInst.setLocal, 0x01
+      wasmInstr.setLocal, 0x01
     ],
-    '[': (loopStack) => [],
-    ']': (loopStack) => []
+    '[': () => [],
+    ']': () => []
   };
 
   function BfInstr(instrSymbol, toWasm, extraParams) {
@@ -113,6 +116,14 @@ const bfToWasm = (function() {
     return [section[sectionType], flatData.length, ...flatData];
   }
 
+  function getStrBytes(str) {
+    const bytes = [];
+    for (let i = 0; i < str.length; ++i) {
+      bytes.push(str.charCodeAt(i));
+    }
+    return bytes;
+  }
+
   function compileToWasm(instrs) {
     const magicNumber = [0x00, 0x61, 0x73, 0x6d];
     const version = [0x01, 0x00, 0x00, 0x00];
@@ -123,6 +134,13 @@ const bfToWasm = (function() {
     const startFunctionSignature = [type.func, 0x00, 0x00];
     const typeSection = createSection('type', functionsCount, startFunctionSignature);
 
+    const importsCount = 0x01;
+    const importModuleName = getStrBytes('imports');
+    const importExportName = getStrBytes('memory');
+    const importMemoryKind = 0x02;
+    const memoryDesc = [0x00, 0x02];
+    const importSection = createSection('import', importsCount, importModuleName.length, importModuleName, importExportName.length, importExportName, importMemoryKind, memoryDesc);
+
     const funcSection = createSection('func', functionsCount, startFuncIndex);
 
     const startSection = createSection('start', startFuncIndex);
@@ -130,23 +148,25 @@ const bfToWasm = (function() {
     const localEntriesCount = 0x01;
     const i32VarCount = 0x02;
     const functionEnd = 0x0b;
-    const initOutputIndex = [wasmInstr.i32const, 0x80, 0x80, 0x04, wasmInstr.setLocal, 0x01];
-    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), []).push(initOutputIndex, functionEnd);
-    const codeSection = createSection('code', functionsCount, functionBody.length, localEntriesCount, i32VarCount, type.i32, functionBody);
+    const initOutputIndex = [wasmInstr.i32const, 0x80, 0x80, 0x04, wasmInstr.setLocal, 0x00];
+    const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), initOutputIndex);
+    functionBody.push(functionEnd);
+    const functionLength = functionBody.length + 3;
+    const codeSection = createSection('code', functionsCount, functionLength, localEntriesCount, i32VarCount, type.i32, functionBody);
 
-    const buffer = [...magicNumber, ...version, ...typeSection, ...funcSection, ...startSection, ...codeSection];
+    const buffer = [...magicNumber, ...version, ...typeSection, ...importSection, ...funcSection, ...startSection, ...codeSection];
     return Uint8Array.from(buffer);
   }
 
   return function(bfStr, optimize = false) {
     if (bfStr == null)
-      throw new Error('Brainfuck string cannot be null.');
+      throw new Error('Argument 0 cannot be null');
 
     if (typeof (bfStr) !== 'string')
-      throw new Error('String expected for brainfuck.');
+      throw new Error('Expected string for argument 0');
 
     if (typeof (optimize) !== 'boolean')
-      throw new Error('Boolean expected for optimize.');
+      throw new Error('Expected boolean for argument 1');
 
     const bfNoComment = stripComments(bfStr); 
     let instrs = parseBf(bfNoComment);
@@ -156,6 +176,3 @@ const bfToWasm = (function() {
     return compileToWasm(instrs);
   }
 })();
-
-const wasm = bfToWasm('+++');
-console.log(wasm);

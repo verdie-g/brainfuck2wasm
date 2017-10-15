@@ -78,14 +78,26 @@ Pointer :   ^
     <script src="bf2wasm.js"></script>
     <script>
         const bfInput = document.getElementById('brainfuck-input');
-        const bfOutput = document.getElementById('brainfuck-output');
+        const bfStrOutput = document.getElementById('brainfuck-string-output');
+        const bfIntOutput = document.getElementById('brainfuck-int-output');
+
+        function toHexString(byteArray) {
+            return Array.from(byteArray, function (byte) {
+                return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+            }).join(' ')
+        }
 
         function run() {
             const bf = bfInput.value;
             const wasm = bfToWasm(bf);
-            console.log(wasm);
-            // WebAssembly.instantiate(wasm, w => console.log(w));
-            // bfOutput.value = new TextDecoder('utf-8').decode(wasm);
+            console.log('wasm for ' + bf + ' : ' + toHexString(Array.from(wasm)));
+            const memory = new WebAssembly.Memory({ initial: 2, maximum: 100 });
+            const imports = { imports: { memory: memory } };
+            WebAssembly.instantiate(wasm, imports).then(instance => {
+                const intView = new Int32Array(memory.buffer.slice(0, 65536));
+                bfStrOutput.value = intView.reduce((str, i) => str += String.fromCharCode(i), '');
+                bfIntOutput.value = intView.toString().replace(/,/g, ' ');
+            });
         }
     </script>
 </body>
