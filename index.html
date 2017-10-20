@@ -105,7 +105,7 @@ Pointer :   ^
             const bf = bfInput.value;
             const wasm = bfToWasm(bf);
             console.log('wasm for ' + bf + ' : ' + toHexString(Array.from(wasm)));
-            const memory = new WebAssembly.Memory({ initial: 2, maximum: 100 });
+            const memory = new WebAssembly.Memory({ initial: 2 });
             const imports = { imports: { memory: memory } };
             WebAssembly.instantiate(wasm, imports).then(instance => {
                 const intView = new Int32Array(memory.buffer.slice(0, 65536));
