@@ -13,3 +13,4 @@ Brainfuck's result is output in two format : string and array of int32.
     - Optimize brainfuck
     - Input instruction
     - Grow brainfuck's memory dynamically
+    - Error handling
