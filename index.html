@@ -96,11 +96,18 @@ Pointer :   ^
         </div>
     </div>
 
-    <script src="bf2wasm.js"></script>
     <script>
         const bfInput = document.getElementById('brainfuck-input');
         const bfStrOutput = document.getElementById('brainfuck-string-output');
         const bfIntOutput = document.getElementById('brainfuck-int-output');
+
+        const worker = new Worker('worker.js');
+        worker.onmessage = function(e) {
+            const buffer = e.data;
+            const intView = new Int32Array(buffer.slice(0, 65536));
+            bfStrOutput.value = intView.reduce((str, i) => str += String.fromCharCode(i), '');
+            bfIntOutput.value = intView.toString().replace(/,/g, ' ');
+        }
 
         function toHexString(byteArray) {
             return Array.from(byteArray, function (byte) {
@@ -110,16 +117,9 @@ Pointer :   ^
 
         function run() {
             const bf = bfInput.value;
-            const wasm = bfToWasm(bf);
-            console.log('wasm for ' + bf + ' : ' + toHexString(Array.from(wasm)));
-            const memory = new WebAssembly.Memory({ initial: 2 });
-            const imports = { imports: { memory: memory } };
-            WebAssembly.instantiate(wasm, imports).then(instance => {
-                const intView = new Int32Array(memory.buffer.slice(0, 65536));
-                bfStrOutput.value = intView.reduce((str, i) => str += String.fromCharCode(i), '');
-                bfIntOutput.value = intView.toString().replace(/,/g, ' ');
-            });
+            worker.postMessage(bf);
         }
+
     </script>
 </body>
 </html>
