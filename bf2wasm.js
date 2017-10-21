@@ -28,11 +28,17 @@ const bfToWasm = (function() {
   };
 
   const wasmInstr = {
+    block: 0x02,
+    loop: 0x03,
+    end: 0x0b,
+    br: 0x0c,
+    br_if: 0x0d,
     getLocal:	0x20,
     setLocal:	0x21,
-    i32const:	0x41,
     i32load:	0x28,
     i32store:	0x36,
+    i32const:	0x41,
+    i32eqz: 0x45,
     i32add:	0x6a,
     i32sub:	0x6b,
     i32eqz:	0x45
@@ -83,8 +89,21 @@ const bfToWasm = (function() {
       wasmInstr.i32add,
       wasmInstr.setLocal, 0x01
     ],
-    '[': () => [],
-    ']': () => []
+    '[': () => [
+      wasmInstr.block,
+      type.block,
+      wasmInstr.loop,
+      type.block
+    ],
+    ']': () => [
+      wasmInstr.getLocal, 0x00,
+      wasmInstr.i32load, 0x02, 0x00,
+      wasmInstr.i32eqz,
+      wasmInstr.br_if, 0x01,
+      wasmInstr.br, 0x00,
+      wasmInstr.end,
+      wasmInstr.end
+    ]
   };
 
   function BfInstr(instrSymbol, toWasm, extraParams) {
@@ -174,10 +193,9 @@ const bfToWasm = (function() {
 
     const localEntriesCount = 0x01;
     const i32VarCount = 0x02;
-    const functionEnd = 0x0b;
     const initOutputIndex = [wasmInstr.i32const, ...intToVarint(65536), wasmInstr.setLocal, 0x00];
     const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), initOutputIndex);
-    functionBody.push(functionEnd);
+    functionBody.push(wasmInstr.end);
     const functionLength = intToVaruint(functionBody.length + 3);
     const codeSection = createSection('code', functionsCount, ...functionLength, localEntriesCount, i32VarCount, type.i32, functionBody);
 
