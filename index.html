@@ -26,7 +26,7 @@
             <div class="column">
                 <div class="field">
                     <div class="control is-expanded">
-                        <label class="label" for="brainfuck-input">Input</label>
+                        <label class="label" for="brainfuck-input">Brainfuck</label>
                         <textarea class="textarea" id="brainfuck-input" style="min-height: 400px">
 ++++++++                Set Cell #0 to 8
 [
@@ -67,7 +67,7 @@ Pointer :   ^
 
                 <div class="field">
                     <p class="control">
-                        <button class="button is-success" onclick="run()">Run</button>
+                        <button class="button is-success" id="run" onclick="run()"><i class="fa fa-play" aria-hidden="true"></i></button>
                     </p>
                 </div>
             </div>
@@ -100,6 +100,9 @@ Pointer :   ^
         const bfInput = document.getElementById('brainfuck-input');
         const bfStrOutput = document.getElementById('brainfuck-string-output');
         const bfIntOutput = document.getElementById('brainfuck-int-output');
+        const runButton = document.getElementById('run');
+        
+        const loadingClass = 'is-loading';
 
         const worker = new Worker('worker.js');
         worker.onmessage = function(e) {
@@ -107,6 +110,7 @@ Pointer :   ^
             const intView = new Int32Array(buffer.slice(0, 65536));
             bfStrOutput.value = intView.reduce((str, i) => str += String.fromCharCode(i), '');
             bfIntOutput.value = intView.toString().replace(/,/g, ' ');
+            runButton.classList.remove(loadingClass);
         }
 
         function toHexString(byteArray) {
@@ -116,6 +120,7 @@ Pointer :   ^
         }
 
         function run() {
+            runButton.classList.add(loadingClass);
             const bf = bfInput.value;
             worker.postMessage(bf);
         }
