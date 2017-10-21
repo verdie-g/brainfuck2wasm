@@ -9,8 +9,8 @@ array of 16384 4 byte wide cells.
 Brainfuck's result is output in two format : string and array of int32.
 
 ## TODO
-    - Compile in a web worker
-    - Optimize brainfuck
-    - Input instruction
-    - Grow brainfuck's memory dynamically
-    - Error handling
+- Compile in a web worker
+- Optimize brainfuck
+- Input instruction
+- Grow brainfuck's memory dynamically
+- Error handling
