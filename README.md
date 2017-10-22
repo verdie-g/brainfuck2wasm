@@ -2,7 +2,7 @@
 
 Compile brainfuck to webassembly.
 
-```js
+```ts
 function bfToWasm(bfStr: string, optimize: boolean): Uint8Array
 ```
 
