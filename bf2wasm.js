@@ -2,6 +2,7 @@ const bfToWasm = (function() {
   'use strict';
 
   const CELL_SIZE = 4;
+  const PAGE_SIZE = 65536;
 
   const section = {
     type: 0x01,
@@ -193,7 +194,7 @@ const bfToWasm = (function() {
 
     const localEntriesCount = 0x01;
     const i32VarCount = 0x02;
-    const initOutputIndex = [wasmInstr.i32const, ...intToVarint(65536), wasmInstr.setLocal, 0x00];
+    const initOutputIndex = [wasmInstr.i32const, ...intToVarint(PAGE_SIZE), wasmInstr.setLocal, 0x00];
     const functionBody = instrs.reduce((res, instr) => res.concat(instr.toWasm(...instr.extraParams)), initOutputIndex);
     functionBody.push(wasmInstr.end);
     const functionLength = intToVaruint(functionBody.length + 3);
