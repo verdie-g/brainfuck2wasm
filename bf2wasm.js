@@ -33,15 +33,15 @@ const bfToWasm = (function() {
     end: 0x0b,
     br: 0x0c,
     br_if: 0x0d,
-    getLocal:	0x20,
-    setLocal:	0x21,
-    i32load:	0x28,
-    i32store:	0x36,
-    i32const:	0x41,
+    getLocal: 0x20,
+    setLocal: 0x21,
+    i32load: 0x28,
+    i32store: 0x36,
+    i32const: 0x41,
     i32eqz: 0x45,
-    i32add:	0x6a,
-    i32sub:	0x6b,
-    i32eqz:	0x45
+    i32add: 0x6a,
+    i32sub: 0x6b,
+    i32eqz: 0x45
   };
 
   // local 0 : brainfuck array index
