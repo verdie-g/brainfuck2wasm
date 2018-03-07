@@ -15,17 +15,16 @@ const bfToWasm = (function() {
     start: 0x08,
     elem: 0x09,
     code: 0x0a,
-    elem: 0x0b
   };
-  
+
   const type = {
+    block: 0x40,
+    func: 0x60,
+    anyfunc: 0x70,
     i32: 0x7f,
     i64: 0x7e,
     f32: 0x7d,
     f64: 0x7c,
-    anyfunc: 0x70,
-    func: 0x60,
-    block: 0x40
   };
 
   const wasmInstr = {
@@ -42,7 +41,6 @@ const bfToWasm = (function() {
     i32eqz: 0x45,
     i32add: 0x6a,
     i32sub: 0x6b,
-    i32eqz: 0x45
   };
 
   // local 0 : brainfuck array index
@@ -52,13 +50,13 @@ const bfToWasm = (function() {
       wasmInstr.getLocal, 0x00,
       wasmInstr.i32const, CELL_SIZE,
       wasmInstr.i32add,
-      wasmInstr.setLocal, 0x00
+      wasmInstr.setLocal, 0x00,
     ],
     '<': () => [
       wasmInstr.getLocal, 0x00,
       wasmInstr.i32const, CELL_SIZE,
       wasmInstr.i32sub,
-      wasmInstr.setLocal, 0x00
+      wasmInstr.setLocal, 0x00,
     ],
     '+': () => [
       wasmInstr.getLocal, 0x00,
@@ -66,7 +64,7 @@ const bfToWasm = (function() {
       wasmInstr.i32load, 0x02, 0x00,
       wasmInstr.i32const, 0x01,
       wasmInstr.i32add,
-      wasmInstr.i32store, 0x02, 0x00
+      wasmInstr.i32store, 0x02, 0x00,
     ],
     '-': () => [
       wasmInstr.getLocal, 0x00,
@@ -74,7 +72,7 @@ const bfToWasm = (function() {
       wasmInstr.i32load, 0x02, 0x00,
       wasmInstr.i32const, 0x01,
       wasmInstr.i32sub,
-      wasmInstr.i32store, 0x02, 0x00
+      wasmInstr.i32store, 0x02, 0x00,
     ],
     ',': () => [
 
@@ -88,13 +86,13 @@ const bfToWasm = (function() {
       wasmInstr.getLocal, 0x01,
       wasmInstr.i32const, CELL_SIZE,
       wasmInstr.i32add,
-      wasmInstr.setLocal, 0x01
+      wasmInstr.setLocal, 0x01,
     ],
     '[': () => [
       wasmInstr.block,
       type.block,
       wasmInstr.loop,
-      type.block
+      type.block,
     ],
     ']': () => [
       wasmInstr.getLocal, 0x00,
@@ -103,8 +101,8 @@ const bfToWasm = (function() {
       wasmInstr.br_if, 0x01,
       wasmInstr.br, 0x00,
       wasmInstr.end,
-      wasmInstr.end
-    ]
+      wasmInstr.end,
+    ],
   };
 
   function BfInstr(instrSymbol, toWasm, extraParams) {
@@ -114,15 +112,15 @@ const bfToWasm = (function() {
   }
 
   function stripComments(bfStr) {
-    const notInstrExp = /[^<>\+\-,\.\[\]]/g;
+    const notInstrExp = /[^<>+\-,.[\]]/g;
     return bfStr.replace(notInstrExp, '');
   }
 
   function parseBf(bfStr) {
     const instrs = [];
-    for (const symbol of bfStr) {
-      const toWasm = instrToWasm[symbol];
-      instrs.push(new BfInstr(symbol, toWasm));
+    for (let i = 0; i < bfStr.length; i += 1) {
+      const toWasm = instrToWasm[bfStr[i]];
+      instrs.push(new BfInstr(bfStr[i], toWasm));
     }
     return instrs;
   }
@@ -131,29 +129,17 @@ const bfToWasm = (function() {
     return instrs;
   }
 
-  function createSection(sectionType, ...data) {
-    const flatData = [].concat.apply([], data);
-    return [section[sectionType], ...intToVaruint(flatData.length), ...flatData];
-  }
-
-  function getStrBytes(str) {
-    const bytes = [];
-    for (let i = 0; i < str.length; ++i) {
-      bytes.push(str.charCodeAt(i));
-    }
-    return bytes;
-  }
-
   function intToVarint(n) {
     const buffer = [];
     let more = true;
     while (more) {
       let byte = n & 0x7F;
       n >>>= 7;
-      if ((n === 0 && (byte & 0x40) === 0) || (n === -1 && (byte & 0x40) !== 0))
+      if ((n === 0 && (byte & 0x40) === 0) || (n === -1 && (byte & 0x40) !== 0)) {
         more = false;
-      else
+      } else {
         byte |= 0x80;
+      }
       buffer.push(byte);
     }
     return buffer;
@@ -164,11 +150,25 @@ const bfToWasm = (function() {
     do {
       let byte = n & 0x7F;
       n >>>= 7;
-      if (n !== 0)
+      if (n !== 0) {
         byte |= 0x80;
+      }
       buffer.push(byte);
     } while (n !== 0);
     return buffer;
+  }
+
+  function createSection(sectionType, ...data) {
+    const flatData = [].concat(...data);
+    return [section[sectionType], ...intToVaruint(flatData.length), ...flatData];
+  }
+
+  function getStrBytes(str) {
+    const bytes = [];
+    for (let i = 0; i < str.length; i += 1) {
+      bytes.push(str.charCodeAt(i));
+    }
+    return bytes;
   }
 
   function compileToWasm(instrs) {
@@ -177,7 +177,7 @@ const bfToWasm = (function() {
 
     const functionsCount = 0x01;
     const startFuncIndex = 0x00;
-    
+
     const startFunctionSignature = [type.func, 0x00, 0x00];
     const typeSection = createSection('type', functionsCount, startFunctionSignature);
 
@@ -204,21 +204,24 @@ const bfToWasm = (function() {
     return Uint8Array.from(buffer);
   }
 
-  return function(bfStr, optimize = false) {
-    if (bfStr == null)
+  return function (bfStr, optimize = false) {
+    if (bfStr == null) {
       throw new Error('Argument 0 cannot be null');
+    }
 
-    if (typeof (bfStr) !== 'string')
+    if (typeof (bfStr) !== 'string') {
       throw new Error('Expected string for argument 0');
+    }
 
-    if (typeof (optimize) !== 'boolean')
+    if (typeof (optimize) !== 'boolean') {
       throw new Error('Expected boolean for argument 1');
+    }
 
-    const bfNoComment = stripComments(bfStr); 
+    const bfNoComment = stripComments(bfStr);
     let instrs = parseBf(bfNoComment);
     if (optimize) {
       instrs = optimizeInstrs(instrs);
     }
     return compileToWasm(instrs);
-  }
+  };
 })();
