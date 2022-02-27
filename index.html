@@ -106,8 +106,7 @@ Pointer :   ^
 
         const worker = new Worker('worker.js');
         worker.onmessage = function(e) {
-            const buffer = e.data;
-            const intView = new Int32Array(buffer.slice(0, 65536));
+            const intView = e.data;
             bfStrOutput.value = intView.reduce((str, i) => str += String.fromCharCode(i), '');
             bfIntOutput.value = intView.toString().replace(/,/g, ' ');
             runButton.classList.remove(loadingClass);
